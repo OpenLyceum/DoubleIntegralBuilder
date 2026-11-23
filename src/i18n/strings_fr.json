@@ -1,21 +1,40 @@
 {
-  "title": "Modèle de Simulation",
+  "title": "Double Integral Builder",
   "screens": {
-    "sim": "Simulation"
+    "volume": "Volume",
+    "bounds": "Bornes"
   },
   "a11y": {
-    "screenSummary": {
-      "playArea": "La zone de jeu affiche le contenu principal de la simulation.",
-      "controlArea": "La zone de contrôle comporte un bouton Tout réinitialiser qui ramène la simulation à son état initial.",
-      "interactionHint": "Explorez la simulation en interagissant avec ses commandes."
+    "volume": {
+      "screenSummary": {
+        "playArea": "Un graphique en projection montre des colonnes sous une surface quadratique.",
+        "controlArea": "Utilisez les curseurs et les boutons pour modifier l’exemple. Réinitialiser rétablit l’état initial.",
+        "interactionHint": "Changez le point d’échantillonnage, puis augmentez le nombre de colonnes."
+      },
+      "controls": {
+        "count": "Colonnes par côté",
+        "sampling": "Point d’échantillonnage",
+        "midpoint": "Centre",
+        "upperRight": "Coin supérieur droit",
+        "rotation": "Angle de vue"
+      }
     },
-    "currentDetails": "La simulation est dans son état initial.",
-    "controls": {
-      "exampleControl": "Contrôle d'exemple"
+    "bounds": {
+      "screenSummary": {
+        "playArea": "Le graphique montre un domaine courbe et la coupe active.",
+        "controlArea": "Utilisez les curseurs et les boutons pour modifier l’exemple. Réinitialiser rétablit l’état initial.",
+        "interactionHint": "Passez aux coupes verticales et dépassez x égal à un."
+      },
+      "controls": {
+        "sweep": "Direction de la coupe",
+        "horizontal": "Horizontale",
+        "vertical": "Verticale",
+        "x": "Abscisse de la coupe",
+        "y": "Ordonnée de la coupe"
+      }
     }
   },
   "preferences": {
-    "title": "Simulation",
-    "exampleToggle": "Exemple de bascule"
+    "title": "Simulation"
   }
 }

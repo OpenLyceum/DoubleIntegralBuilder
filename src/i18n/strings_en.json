@@ -1,21 +1,40 @@
 {
-  "title": "SceneryStack Template",
+  "title": "Double Integral Builder",
   "screens": {
-    "sim": "Sim"
+    "volume": "Volume",
+    "bounds": "Bounds"
   },
   "a11y": {
-    "screenSummary": {
-      "playArea": "The play area shows the main simulation content.",
-      "controlArea": "The control area has a Reset All button that returns the simulation to its starting state.",
-      "interactionHint": "Explore the simulation by interacting with its controls."
+    "volume": {
+      "screenSummary": {
+        "playArea": "A projected plot shows columns under a quadratic roof.",
+        "controlArea": "Use the sliders and buttons to change the example. Reset All restores the starting state.",
+        "interactionHint": "Change the sample location, then increase the number of columns."
+      },
+      "controls": {
+        "count": "Columns per side",
+        "sampling": "Sample location",
+        "midpoint": "Midpoint",
+        "upperRight": "Upper-right corner",
+        "rotation": "View angle"
+      }
     },
-    "currentDetails": "The simulation is in its initial state.",
-    "controls": {
-      "exampleControl": "Example control"
+    "bounds": {
+      "screenSummary": {
+        "playArea": "The graph shows a curved region and its active slice.",
+        "controlArea": "Use the sliders and buttons to change the example. Reset All restores the starting state.",
+        "interactionHint": "Switch to vertical slices and sweep past x equals one."
+      },
+      "controls": {
+        "sweep": "Slice direction",
+        "horizontal": "Horizontal",
+        "vertical": "Vertical",
+        "x": "Slice x",
+        "y": "Slice y"
+      }
     }
   },
   "preferences": {
-    "title": "Simulation",
-    "exampleToggle": "Example Toggle"
+    "title": "Simulation"
   }
 }

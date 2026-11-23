@@ -12,15 +12,15 @@
 
 import { StringProperty } from "scenerystack/axon";
 import { Tandem } from "scenerystack/tandem";
-// seed:soak-imports:start
-import SimColors from "../../src/SimColors.js";
-import { SimScreen } from "../../src/sim-screen/SimScreen.js";
-// seed:soak-imports:end
+import { BoundsScreen } from "../../src/bounds/BoundsScreen.js";
+import DoubleIntegralBuilderColors from "../../src/DoubleIntegralBuilderColors.js";
+import { VolumeScreen } from "../../src/volume/VolumeScreen.js";
 import { describeHeadlessSoak } from "../helpers/headlessSoak.js";
 
 describeHeadlessSoak({
-  // seed:soak-screens:start
-  screens: () => [new SimScreen({ name: new StringProperty("Sim"), tandem: Tandem.OPT_OUT })],
-  tracked: () => ({ SimColors }),
-  // seed:soak-screens:end
+  screens: () => [
+    new VolumeScreen({ name: new StringProperty("Volume"), tandem: Tandem.OPT_OUT }),
+    new BoundsScreen({ name: new StringProperty("Bounds"), tandem: Tandem.OPT_OUT }),
+  ],
+  tracked: () => ({ DoubleIntegralBuilderColors }),
 });

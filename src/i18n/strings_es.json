@@ -1,21 +1,40 @@
 {
-  "title": "Plantilla de Simulación",
+  "title": "Double Integral Builder",
   "screens": {
-    "sim": "Simulación"
+    "volume": "Volumen",
+    "bounds": "Límites"
   },
   "a11y": {
-    "screenSummary": {
-      "playArea": "El área de juego muestra el contenido principal de la simulación.",
-      "controlArea": "El área de control tiene un botón Restablecer todo que devuelve la simulación a su estado inicial.",
-      "interactionHint": "Explora la simulación interactuando con sus controles."
+    "volume": {
+      "screenSummary": {
+        "playArea": "Un gráfico en proyección muestra columnas bajo una superficie cuadrática.",
+        "controlArea": "Usa los controles deslizantes y los botones para cambiar el ejemplo. Reiniciar restaura el estado inicial.",
+        "interactionHint": "Cambia el punto de muestreo y aumenta el número de columnas."
+      },
+      "controls": {
+        "count": "Columnas por lado",
+        "sampling": "Punto de muestreo",
+        "midpoint": "Punto medio",
+        "upperRight": "Esquina superior derecha",
+        "rotation": "Ángulo de visión"
+      }
     },
-    "currentDetails": "La simulación está en su estado inicial.",
-    "controls": {
-      "exampleControl": "Control de ejemplo"
+    "bounds": {
+      "screenSummary": {
+        "playArea": "El gráfico muestra una región curva y el corte activo.",
+        "controlArea": "Usa los controles deslizantes y los botones para cambiar el ejemplo. Reiniciar restaura el estado inicial.",
+        "interactionHint": "Cambia a cortes verticales y pasa por x igual a uno."
+      },
+      "controls": {
+        "sweep": "Dirección del corte",
+        "horizontal": "Horizontal",
+        "vertical": "Vertical",
+        "x": "Coordenada x del corte",
+        "y": "Coordenada y del corte"
+      }
     }
   },
   "preferences": {
-    "title": "Simulación",
-    "exampleToggle": "Ejemplo de alternancia"
+    "title": "Simulación"
   }
 }

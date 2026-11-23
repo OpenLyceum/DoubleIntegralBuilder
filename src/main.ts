@@ -21,24 +21,29 @@ import "./brand.js";
 
 import { onReadyToLaunch, PreferencesModel, Sim } from "scenerystack/sim";
 import { Tandem } from "scenerystack/tandem";
+import { BoundsScreen } from "./bounds/BoundsScreen.js";
+import DoubleIntegralBuilderColors from "./DoubleIntegralBuilderColors.js";
 import { StringManager } from "./i18n/StringManager.js";
-import { SimPreferencesModel } from "./preferences/SimPreferencesModel.js";
-import { SimPreferencesNode } from "./preferences/SimPreferencesNode.js";
-import SimColors from "./SimColors.js";
-import { SimScreen } from "./sim-screen/SimScreen.js";
+import { DoubleIntegralBuilderPreferencesModel } from "./preferences/DoubleIntegralBuilderPreferencesModel.js";
+import { DoubleIntegralBuilderPreferencesNode } from "./preferences/DoubleIntegralBuilderPreferencesNode.js";
+import { VolumeScreen } from "./volume/VolumeScreen.js";
 
 onReadyToLaunch(() => {
   const stringManager = StringManager.getInstance();
 
-  // Simulation-specific preferences; initial values come from simQueryParameters.
-  const simPreferences = new SimPreferencesModel(Tandem.ROOT.createTandem("preferences"));
+  // Simulation-specific preferences; initial values come from doubleIntegralBuilderQueryParameters.
+  const simPreferences = new DoubleIntegralBuilderPreferencesModel();
 
   const screens = [
-    new SimScreen({
-      // The screen name Property updates automatically when the locale changes
-      name: stringManager.getScreenNames().simStringProperty,
-      tandem: Tandem.ROOT.createTandem("simScreen"),
-      backgroundColorProperty: SimColors.backgroundColorProperty,
+    new VolumeScreen({
+      name: stringManager.getScreenNames().volumeStringProperty,
+      tandem: Tandem.ROOT.createTandem("volumeScreen"),
+      backgroundColorProperty: DoubleIntegralBuilderColors.backgroundColorProperty,
+    }),
+    new BoundsScreen({
+      name: stringManager.getScreenNames().boundsStringProperty,
+      tandem: Tandem.ROOT.createTandem("boundsScreen"),
+      backgroundColorProperty: DoubleIntegralBuilderColors.backgroundColorProperty,
     }),
   ];
 
@@ -53,7 +58,7 @@ onReadyToLaunch(() => {
       simulationOptions: {
         customPreferences: [
           {
-            createContent: (tandem: Tandem) => new SimPreferencesNode(simPreferences, tandem),
+            createContent: (tandem: Tandem) => new DoubleIntegralBuilderPreferencesNode(simPreferences, tandem),
           },
         ],
       },

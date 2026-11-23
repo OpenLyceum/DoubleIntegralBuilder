@@ -9,11 +9,11 @@
  * tests below using forceGC().
  */
 
-// seed:leak-imports:start
-import { TimeModel } from "../src/common/TimeModel.js";
-// seed:leak-imports:end
+import { BoundsModel } from "../src/bounds/model/BoundsModel.js";
+import { VolumeModel } from "../src/volume/model/VolumeModel.js";
 import { describeDisposalLeaks } from "./helpers/memoryLeak.js";
 
-// seed:leak-cases:start
-describeDisposalLeaks([{ name: "TimeModel", create: () => new TimeModel(), idempotentDispose: true }]);
-// seed:leak-cases:end
+describeDisposalLeaks([
+  { name: "VolumeModel", create: () => new VolumeModel() },
+  { name: "BoundsModel", create: () => new BoundsModel() },
+]);
