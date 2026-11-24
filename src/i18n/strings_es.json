@@ -16,6 +16,10 @@
         "sampling": "Punto de muestreo",
         "midpoint": "Punto medio",
         "upperRight": "Esquina superior derecha",
+        "rotateSolid": "Girar el sólido",
+        "rotateSolidHelp": "Usa las flechas izquierda y derecha, o A y D, para girar el sólido.",
+        "rotateFine": "Girar en pasos más pequeños",
+        "rotateFineHelp": "Mantén pulsada Mayús para girar el sólido en pasos más pequeños.",
         "rotation": "Ángulo de visión"
       }
     },
@@ -26,6 +30,7 @@
         "interactionHint": "Cambia a cortes verticales y pasa por x igual a uno."
       },
       "controls": {
+        "sliceGrip": "Asa del corte",
         "sweep": "Dirección del corte",
         "horizontal": "Horizontal",
         "vertical": "Vertical",

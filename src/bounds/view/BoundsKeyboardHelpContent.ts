@@ -1,11 +1,15 @@
 import {
   BasicActionsKeyboardHelpSection,
+  MoveDraggableItemsKeyboardHelpSection,
   SliderControlsKeyboardHelpSection,
   TwoColumnKeyboardHelpContent,
 } from "scenerystack/scenery-phet";
 
 export class BoundsKeyboardHelpContent extends TwoColumnKeyboardHelpContent {
   public constructor() {
-    super([new BasicActionsKeyboardHelpSection()], [new SliderControlsKeyboardHelpSection()]);
+    super(
+      [new BasicActionsKeyboardHelpSection()],
+      [new MoveDraggableItemsKeyboardHelpSection(), new SliderControlsKeyboardHelpSection()],
+    );
   }
 }

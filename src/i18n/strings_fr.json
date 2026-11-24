@@ -16,6 +16,10 @@
         "sampling": "Point d’échantillonnage",
         "midpoint": "Centre",
         "upperRight": "Coin supérieur droit",
+        "rotateSolid": "Faire pivoter le solide",
+        "rotateSolidHelp": "Utilisez les flèches gauche et droite, ou A et D, pour faire pivoter le solide.",
+        "rotateFine": "Pivoter par petits pas",
+        "rotateFineHelp": "Maintenez Maj enfoncée pour faire pivoter le solide par petits pas.",
         "rotation": "Angle de vue"
       }
     },
@@ -26,6 +30,7 @@
         "interactionHint": "Passez aux coupes verticales et dépassez x égal à un."
       },
       "controls": {
+        "sliceGrip": "Poignée de la coupe",
         "sweep": "Direction de la coupe",
         "horizontal": "Horizontale",
         "vertical": "Verticale",
