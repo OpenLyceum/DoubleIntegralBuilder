@@ -1,7 +1,8 @@
 import { DerivedProperty, type NumberProperty, type TReadOnlyProperty } from "scenerystack/axon";
-import { Bounds2, Dimension2, type Range, toFixedNumber } from "scenerystack/dot";
+import { Bounds2, Dimension2, type Range, toFixedNumber, Vector2 } from "scenerystack/dot";
 import { localeProperty } from "scenerystack/joist";
-import { CanvasNode, Node, Text, VBox } from "scenerystack/scenery";
+import { Shape } from "scenerystack/kite";
+import { CanvasNode, Circle, DragListener, Node, Rectangle, Text, VBox } from "scenerystack/scenery";
 import { ResetAllButton } from "scenerystack/scenery-phet";
 import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
 import { HSlider, RectangularPushButton } from "scenerystack/sun";
@@ -190,6 +191,8 @@ export class Plane {
 
   public project = ([x, y]: Point): Point => [this.origin[0] + x * this.scale, this.origin[1] - y * this.scale];
 
+  public unproject = ([x, y]: Point): Point => [(x - this.origin[0]) / this.scale, (this.origin[1] - y) / this.scale];
+
   public axes(context: CanvasRenderingContext2D, colors: PlotColors): void {
     const { min: x0, max: x1 } = this.xRange;
     const { min: y0, max: y1 } = this.yRange;
@@ -249,4 +252,66 @@ export function plotLabel(context: CanvasRenderingContext2D, value: string, poin
   context.font = "13px sans-serif";
   context.fillStyle = color;
   context.fillText(value, ...point);
+}
+
+type PlotDrag = (x: number, y: number, start: boolean) => void;
+const plotPoint = (plot: PlotCanvas, point: Vector2, offset = Vector2.ZERO): Point => {
+  const local = plot.globalToLocalPoint(point).plus(offset);
+  return [Math.max(0, Math.min(PLOT_WIDTH, local.x)), Math.max(0, Math.min(PLOT_HEIGHT, local.y))];
+};
+
+/**
+ * Pointer-only drag surface over the whole plot, reporting plot-pixel positions. Every quantity
+ * driven this way also has a slider, which owns the keyboard path.
+ */
+export function addPlotDrag(plot: PlotCanvas, cursor: string, drag: PlotDrag): void {
+  // Rectangles have a Scenery hit shape. The canvas itself only paints pixels.
+  const hitArea = new Rectangle(0, 0, PLOT_WIDTH, PLOT_HEIGHT, { fill: "transparent", cursor });
+  const listener = new DragListener({
+    start: (event) => drag(...plotPoint(plot, event.pointer.point), true),
+    drag: (event) => drag(...plotPoint(plot, event.pointer.point), false),
+  });
+  hitArea.addInputListener(listener);
+  plot.insertChild(0, hitArea);
+  plot.addDisposable(listener, hitArea);
+}
+
+/**
+ * Visible pointer-only grab handle on a plot, above any drag surface. The caller places it in
+ * plot pixels; while dragged it reports the grabbed point (keeping the grab offset, so it never
+ * jumps to the finger). Its quantity's slider owns the keyboard path.
+ */
+export class PlotGrip extends Node {
+  public constructor(plot: PlotCanvas, drag: (x: number, y: number) => void, radius = 8) {
+    const halo = new Circle(radius + 7, { fill: Colors.secondaryPlotColorProperty, opacity: 0.3 });
+    super({
+      children: [
+        halo,
+        new Circle(radius, {
+          fill: Colors.secondaryPlotColorProperty,
+          stroke: Colors.panelBackgroundColorProperty,
+          lineWidth: 2,
+        }),
+      ],
+    });
+    this.mouseArea = Shape.circle(0, 0, radius + 6);
+    this.touchArea = Shape.circle(0, 0, radius + 16);
+    let offset = Vector2.ZERO;
+    const listener = new DragListener({
+      start: (event) => {
+        offset = this.translation.minus(plot.globalToLocalPoint(event.pointer.point));
+      },
+      drag: (event) => drag(...plotPoint(plot, event.pointer.point, offset)),
+    });
+    listener.isHighlightedProperty.link((highlighted) => {
+      halo.opacity = highlighted ? 0.5 : 0.3;
+    });
+    this.addInputListener(listener);
+    this.addDisposable(listener);
+    plot.addChild(this);
+  }
+
+  public place([x, y]: Point): void {
+    this.setTranslation(x, y);
+  }
 }

@@ -1,7 +1,8 @@
-import { DerivedProperty } from "scenerystack/axon";
+import { DerivedProperty, Multilink } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import type { ScreenViewOptions } from "scenerystack/sim";
 import {
+  addPlotDrag,
   choice,
   computed,
   dot,
@@ -10,6 +11,7 @@ import {
   line,
   Plane,
   PlotCanvas,
+  PlotGrip,
   plotLabel,
   slider,
 } from "../../common/LabView.js";
@@ -76,6 +78,21 @@ export class BoundsScreenView extends LabView {
       if (!horizontal()) {
         plotLabel(context, "x = 1", plane.project([0.92, -0.13]), colors.ink);
       }
+    });
+    // Drag the slice by its grip, or tap anywhere on the plot to move the slice there.
+    const moveSlice = (x: number, y: number) => {
+      const [modelX, modelY] = plane.unproject([x, y]);
+      const property = horizontal() ? yProperty : xProperty;
+      property.value = property.range.constrainValue(Math.round((horizontal() ? modelY : modelX) * 100) / 100);
+    };
+    addPlotDrag(plot, "pointer", moveSlice);
+    const grip = new PlotGrip(plot, moveSlice);
+    Multilink.multilink(properties, () => {
+      const t = coordinate();
+      const [min, max] = sliceBounds(sweepProperty.value, t);
+      const middle = (min + max) / 2;
+      grip.place(plane.project(horizontal() ? [middle, t] : [t, middle]));
+      grip.cursor = horizontal() ? "ns-resize" : "ew-resize";
     });
     super(
       {

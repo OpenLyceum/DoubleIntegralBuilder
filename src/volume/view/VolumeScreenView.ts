@@ -1,11 +1,57 @@
 import type { ScreenViewOptions } from "scenerystack/sim";
-import { choice, computed, dot, format, LabView, line, PlotCanvas, plotLabel, slider } from "../../common/LabView.js";
+import {
+  addPlotDrag,
+  choice,
+  computed,
+  dot,
+  format,
+  LabView,
+  line,
+  PlotCanvas,
+  plotLabel,
+  slider,
+} from "../../common/LabView.js";
 import { EXACT_VOLUME, roof, volumeCells, volumeEstimate } from "../../common/model/IntegralMath.js";
 import { orthographic } from "../../common/Projection.js";
 import { StringManager } from "../../i18n/StringManager.js";
 import type { VolumeModel } from "../model/VolumeModel.js";
 
 type Point3 = readonly [number, number, number];
+const DEGREES_PER_PIXEL = 0.3;
+
+/**
+ * A double-headed arc around the front of the base, fixed to the viewer like a turntable
+ * ring, so touch users (who never see a cursor) can tell the view turns when dragged.
+ */
+function drawTurntable(
+  context: CanvasRenderingContext2D,
+  yawDegrees: number,
+  xy: (point: Point3) => readonly [number, number],
+  color: string,
+): void {
+  const yaw = (yawDegrees * Math.PI) / 180;
+  const front = Math.atan2(-Math.cos(yaw), Math.sin(yaw));
+  const arc = Array.from({ length: 41 }, (_, i) => {
+    const angle = front + ((i - 20) / 20) * (Math.PI / 3);
+    return xy([0.5 + 0.9 * Math.cos(angle), 0.5 + 0.9 * Math.sin(angle), 0]);
+  });
+  context.globalAlpha = 0.55;
+  line(context, arc, color, 2);
+  for (const [tip, before] of [
+    [arc[0], arc[3]],
+    [arc[arc.length - 1], arc[arc.length - 4]],
+  ] as const) {
+    if (tip && before) {
+      const angle = Math.atan2(tip[1] - before[1], tip[0] - before[0]);
+      const wing = (side: number): readonly [number, number] => [
+        tip[0] - 11 * Math.cos(angle + side * 0.45),
+        tip[1] - 11 * Math.sin(angle + side * 0.45),
+      ];
+      line(context, [wing(1), tip, wing(-1)], color, 2);
+    }
+  }
+  context.globalAlpha = 1;
+}
 
 export class VolumeScreenView extends LabView {
   public constructor(model: VolumeModel, options?: ScreenViewOptions) {
@@ -33,6 +79,7 @@ export class VolumeScreenView extends LabView {
         [0, 1, 0],
       ];
       const xy = ([x, y, z]: Point3) => project([x, y, z * 0.75]).point;
+      drawTurntable(context, rotationProperty.value, xy, colors.ink);
       line(context, [...floor, floor[0] as Point3].map(xy), colors.ink, 2);
       const boxSize = 1 / countProperty.value;
       const faces = cells().flatMap(({ x, y, height, sampleX, sampleY }) => {
@@ -103,6 +150,19 @@ export class VolumeScreenView extends LabView {
       plotLabel(context, "z = 1 + x² + y²", [16, 25], colors.alternate);
       plotLabel(context, "x", xy([1.2, 0, 0]), colors.ink);
       plotLabel(context, "y", xy([0, 1.14, 0]), colors.ink);
+    });
+    // Drag sideways anywhere on the view to turn the solid; the rotation slider is the keyboard path.
+    let grabX = 0;
+    let grabRotation = 0;
+    addPlotDrag(plot, "ew-resize", (x, _y, start) => {
+      if (start) {
+        grabX = x;
+        grabRotation = rotationProperty.value;
+      } else {
+        // Dragging right turns the near corner to the right, which lowers the yaw.
+        const next = Math.round(grabRotation - (x - grabX) * DEGREES_PER_PIXEL);
+        rotationProperty.value = rotationProperty.range.constrainValue(next);
+      }
     });
     super(
       {
