@@ -16,6 +16,10 @@
         "sampling": "Sample location",
         "midpoint": "Midpoint",
         "upperRight": "Upper-right corner",
+        "rotateSolid": "Rotate the solid",
+        "rotateSolidHelp": "Use the left and right arrow keys, or A and D, to rotate the solid.",
+        "rotateFine": "Rotate in smaller steps",
+        "rotateFineHelp": "Hold Shift while rotating the solid to take smaller steps.",
         "rotation": "View angle"
       }
     },
@@ -26,6 +30,7 @@
         "interactionHint": "Switch to vertical slices and sweep past x equals one."
       },
       "controls": {
+        "sliceGrip": "Slice grip",
         "sweep": "Slice direction",
         "horizontal": "Horizontal",
         "vertical": "Vertical",

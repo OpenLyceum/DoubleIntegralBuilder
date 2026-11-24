@@ -1,6 +1,8 @@
+import { roundSymmetric, Vector2 } from "scenerystack/dot";
 import type { ScreenViewOptions } from "scenerystack/sim";
 import {
   addPlotDrag,
+  addPlotKeyboardDrag,
   choice,
   computed,
   dot,
@@ -158,10 +160,10 @@ export class VolumeScreenView extends LabView {
     // The drag's speed, measured each frame from the rotation it produced, carries
     // on after release. `angle` keeps the fractional rotation between frames.
     const spin = { dragging: false, velocity: 0, angle: rotationProperty.value, sampled: rotationProperty.value };
-    // Drag sideways anywhere on the view to turn the solid; the rotation slider is the keyboard path.
+    // Drag sideways anywhere on the view to turn the solid.
     let grabX = 0;
     let grabRotation = 0;
-    addPlotDrag(
+    const dragSurface = addPlotDrag(
       plot,
       "ew-resize",
       (x, _y, start) => {
@@ -172,7 +174,7 @@ export class VolumeScreenView extends LabView {
           spin.velocity = 0;
         } else {
           // Dragging right turns the near corner to the right, which lowers the yaw.
-          const next = Math.round(grabRotation - (x - grabX) * DEGREES_PER_PIXEL);
+          const next = roundSymmetric(grabRotation - (x - grabX) * DEGREES_PER_PIXEL);
           rotationProperty.value = rotationProperty.range.constrainValue(next);
         }
       },
@@ -184,6 +186,20 @@ export class VolumeScreenView extends LabView {
         }
       },
     );
+    addPlotKeyboardDrag(dragSurface, s.rotateSolidStringProperty, {
+      keyboardDragDirection: "leftRight",
+      dragDelta: 5,
+      shiftDragDelta: 1,
+      positionProperty: {
+        get value() {
+          return new Vector2(-rotationProperty.value, 0);
+        },
+        set value(position: Vector2) {
+          spin.velocity = 0;
+          rotationProperty.value = rotationProperty.range.constrainValue(-position.x);
+        },
+      },
+    });
     super(
       {
         title: manager.getScreenNames().volumeStringProperty,
@@ -208,7 +224,7 @@ export class VolumeScreenView extends LabView {
         // Smooth over a few frames so a release keeps the drag's momentum.
         spin.velocity = 0.6 * spin.velocity + (0.4 * (rotation - spin.sampled)) / dt;
       } else if (spin.velocity !== 0) {
-        if (Math.round(spin.angle) !== rotation) {
+        if (roundSymmetric(spin.angle) !== rotation) {
           // The slider or Reset All moved the solid: let it win.
           spin.velocity = 0;
         } else {
@@ -219,7 +235,7 @@ export class VolumeScreenView extends LabView {
             spin.angle = range.constrainValue(spin.angle);
             spin.velocity = 0;
           }
-          rotationProperty.value = Math.round(spin.angle);
+          rotationProperty.value = roundSymmetric(spin.angle);
         }
       }
       spin.sampled = rotationProperty.value;

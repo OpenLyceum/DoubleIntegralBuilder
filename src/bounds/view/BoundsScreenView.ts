@@ -1,8 +1,9 @@
 import { DerivedProperty, Multilink } from "scenerystack/axon";
-import { Range } from "scenerystack/dot";
+import { Range, roundSymmetric, toFixedNumber, Vector2 } from "scenerystack/dot";
 import type { ScreenViewOptions } from "scenerystack/sim";
 import {
   addPlotDrag,
+  addPlotKeyboardDrag,
   choice,
   computed,
   dot,
@@ -83,7 +84,7 @@ export class BoundsScreenView extends LabView {
     const moveSlice = (x: number, y: number) => {
       const [modelX, modelY] = plane.unproject([x, y]);
       const property = horizontal() ? yProperty : xProperty;
-      property.value = property.range.constrainValue(Math.round((horizontal() ? modelY : modelX) * 100) / 100);
+      property.value = property.range.constrainValue(roundSymmetric((horizontal() ? modelY : modelX) * 100) / 100);
     };
     addPlotDrag(plot, "pointer", moveSlice);
     const grip = new PlotGrip(plot, moveSlice, () => {
@@ -92,6 +93,20 @@ export class BoundsScreenView extends LabView {
       return horizontal()
         ? `y = ${format(t)} · ${format(min)} ≤ x ≤ ${format(max)}`
         : `x = ${format(t)} · ${format(min)} ≤ y ≤ ${format(max)}`;
+    });
+    addPlotKeyboardDrag(grip, s.sliceGripStringProperty, {
+      dragDelta: 0.05,
+      shiftDragDelta: 0.01,
+      positionProperty: {
+        get value() {
+          return new Vector2(xProperty.value, -yProperty.value);
+        },
+        set value(position: Vector2) {
+          const property = horizontal() ? yProperty : xProperty;
+          const next = horizontal() ? -position.y : position.x;
+          property.value = property.range.constrainValue(toFixedNumber(next, 2));
+        },
+      },
     });
     Multilink.multilink(properties, () => {
       const t = coordinate();
