@@ -264,12 +264,13 @@ const plotPoint = (plot: PlotCanvas, point: Vector2, offset = Vector2.ZERO): Poi
  * Pointer-only drag surface over the whole plot, reporting plot-pixel positions. Every quantity
  * driven this way also has a slider, which owns the keyboard path.
  */
-export function addPlotDrag(plot: PlotCanvas, cursor: string, drag: PlotDrag): void {
+export function addPlotDrag(plot: PlotCanvas, cursor: string, drag: PlotDrag, end?: () => void): void {
   // Rectangles have a Scenery hit shape. The canvas itself only paints pixels.
   const hitArea = new Rectangle(0, 0, PLOT_WIDTH, PLOT_HEIGHT, { fill: "transparent", cursor });
   const listener = new DragListener({
     start: (event) => drag(...plotPoint(plot, event.pointer.point), true),
     drag: (event) => drag(...plotPoint(plot, event.pointer.point), false),
+    end: () => end?.(),
   });
   hitArea.addInputListener(listener);
   plot.insertChild(0, hitArea);
@@ -279,12 +280,19 @@ export function addPlotDrag(plot: PlotCanvas, cursor: string, drag: PlotDrag): v
 /**
  * Visible pointer-only grab handle on a plot, above any drag surface. The caller places it in
  * plot pixels; while dragged it reports the grabbed point (keeping the grab offset, so it never
- * jumps to the finger). Its quantity's slider owns the keyboard path.
+ * jumps to the finger). Its quantity's slider owns the keyboard path. An optional readout is
+ * shown above the grip while it is hovered or dragged.
  */
 export class PlotGrip extends Node {
-  public constructor(plot: PlotCanvas, drag: (x: number, y: number) => void, radius = 8) {
+  private readonly readout: (() => string) | null;
+  private readonly label = new Text("", { font: "bold 13px sans-serif", fill: Colors.textColorProperty });
+  private readonly labelBox: Rectangle;
+
+  public constructor(plot: PlotCanvas, drag: (x: number, y: number) => void, readout?: () => string) {
+    const radius = 8;
     const halo = new Circle(radius + 7, { fill: Colors.secondaryPlotColorProperty, opacity: 0.3 });
     super({
+      excludeInvisibleChildrenFromBounds: true,
       children: [
         halo,
         new Circle(radius, {
@@ -294,6 +302,16 @@ export class PlotGrip extends Node {
         }),
       ],
     });
+    this.readout = readout ?? null;
+    this.labelBox = new Rectangle(0, 0, 1, 1, {
+      cornerRadius: 4,
+      fill: Colors.panelBackgroundColorProperty,
+      opacity: 0.9,
+      pickable: false,
+      visible: false,
+      children: [this.label],
+    });
+    this.addChild(this.labelBox);
     this.mouseArea = Shape.circle(0, 0, radius + 6);
     this.touchArea = Shape.circle(0, 0, radius + 16);
     let offset = Vector2.ZERO;
@@ -305,6 +323,8 @@ export class PlotGrip extends Node {
     });
     listener.isHighlightedProperty.link((highlighted) => {
       halo.opacity = highlighted ? 0.5 : 0.3;
+      this.labelBox.visible = highlighted && this.readout !== null;
+      this.updateLabel();
     });
     this.addInputListener(listener);
     this.addDisposable(listener);
@@ -313,5 +333,26 @@ export class PlotGrip extends Node {
 
   public place([x, y]: Point): void {
     this.setTranslation(x, y);
+    this.updateLabel();
+  }
+
+  /** Refreshes the readout and keeps it on the plot: above the grip, or below it near the top. */
+  private updateLabel(): void {
+    if (!(this.readout && this.labelBox.visible)) {
+      return;
+    }
+    this.label.string = this.readout();
+    this.labelBox.setRect(0, 0, this.label.width + 10, this.label.height + 4);
+    this.label.center = this.labelBox.localBounds.center;
+    const gap = 18;
+    this.labelBox.centerX = Math.max(
+      this.labelBox.width / 2 - this.x,
+      Math.min(PLOT_WIDTH - this.x - this.labelBox.width / 2, 0),
+    );
+    if (this.y - gap - this.labelBox.height >= 0) {
+      this.labelBox.bottom = -gap;
+    } else {
+      this.labelBox.top = gap;
+    }
   }
 }

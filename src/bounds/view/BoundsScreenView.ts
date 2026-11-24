@@ -86,7 +86,13 @@ export class BoundsScreenView extends LabView {
       property.value = property.range.constrainValue(Math.round((horizontal() ? modelY : modelX) * 100) / 100);
     };
     addPlotDrag(plot, "pointer", moveSlice);
-    const grip = new PlotGrip(plot, moveSlice);
+    const grip = new PlotGrip(plot, moveSlice, () => {
+      const t = coordinate();
+      const [min, max] = sliceBounds(sweepProperty.value, t);
+      return horizontal()
+        ? `y = ${format(t)} · ${format(min)} ≤ x ≤ ${format(max)}`
+        : `x = ${format(t)} · ${format(min)} ≤ y ≤ ${format(max)}`;
+    });
     Multilink.multilink(properties, () => {
       const t = coordinate();
       const [min, max] = sliceBounds(sweepProperty.value, t);

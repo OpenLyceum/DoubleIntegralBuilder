@@ -18,6 +18,10 @@ import type { VolumeModel } from "../model/VolumeModel.js";
 
 type Point3 = readonly [number, number, number];
 const DEGREES_PER_PIXEL = 0.3;
+// After a flick the solid keeps turning, losing speed at this rate (1/s), and stops below the minimum.
+const SPIN_FRICTION = 4;
+const MIN_SPIN_SPEED = 3; // degrees per second
+const MIN_FLICK_SPEED = 20; // degrees per second
 
 /**
  * A double-headed arc around the front of the base, fixed to the viewer like a turntable
@@ -151,19 +155,35 @@ export class VolumeScreenView extends LabView {
       plotLabel(context, "x", xy([1.2, 0, 0]), colors.ink);
       plotLabel(context, "y", xy([0, 1.14, 0]), colors.ink);
     });
+    // The drag's speed, measured each frame from the rotation it produced, carries
+    // on after release. `angle` keeps the fractional rotation between frames.
+    const spin = { dragging: false, velocity: 0, angle: rotationProperty.value, sampled: rotationProperty.value };
     // Drag sideways anywhere on the view to turn the solid; the rotation slider is the keyboard path.
     let grabX = 0;
     let grabRotation = 0;
-    addPlotDrag(plot, "ew-resize", (x, _y, start) => {
-      if (start) {
-        grabX = x;
-        grabRotation = rotationProperty.value;
-      } else {
-        // Dragging right turns the near corner to the right, which lowers the yaw.
-        const next = Math.round(grabRotation - (x - grabX) * DEGREES_PER_PIXEL);
-        rotationProperty.value = rotationProperty.range.constrainValue(next);
-      }
-    });
+    addPlotDrag(
+      plot,
+      "ew-resize",
+      (x, _y, start) => {
+        if (start) {
+          grabX = x;
+          grabRotation = rotationProperty.value;
+          spin.dragging = true;
+          spin.velocity = 0;
+        } else {
+          // Dragging right turns the near corner to the right, which lowers the yaw.
+          const next = Math.round(grabRotation - (x - grabX) * DEGREES_PER_PIXEL);
+          rotationProperty.value = rotationProperty.range.constrainValue(next);
+        }
+      },
+      () => {
+        spin.dragging = false;
+        spin.angle = rotationProperty.value;
+        if (Math.abs(spin.velocity) < MIN_FLICK_SPEED) {
+          spin.velocity = 0;
+        }
+      },
+    );
     super(
       {
         title: manager.getScreenNames().volumeStringProperty,
@@ -182,5 +202,35 @@ export class VolumeScreenView extends LabView {
       },
       options,
     );
+    this.spin = (dt) => {
+      const rotation = rotationProperty.value;
+      if (spin.dragging) {
+        // Smooth over a few frames so a release keeps the drag's momentum.
+        spin.velocity = 0.6 * spin.velocity + (0.4 * (rotation - spin.sampled)) / dt;
+      } else if (spin.velocity !== 0) {
+        if (Math.round(spin.angle) !== rotation) {
+          // The slider or Reset All moved the solid: let it win.
+          spin.velocity = 0;
+        } else {
+          spin.velocity *= Math.exp(-SPIN_FRICTION * dt);
+          spin.angle += spin.velocity * dt;
+          const range = rotationProperty.range;
+          if (Math.abs(spin.velocity) < MIN_SPIN_SPEED || !range.contains(spin.angle)) {
+            spin.angle = range.constrainValue(spin.angle);
+            spin.velocity = 0;
+          }
+          rotationProperty.value = Math.round(spin.angle);
+        }
+      }
+      spin.sampled = rotationProperty.value;
+    };
+  }
+
+  private readonly spin: (dt: number) => void;
+
+  public override step(dt: number): void {
+    if (dt > 0) {
+      this.spin(dt);
+    }
   }
 }
