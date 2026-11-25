@@ -1,3 +1,5 @@
+import { SIMPSON_PANELS } from "../../DoubleIntegralBuilderConstants.js";
+
 /** The integrands offered on both screens, as z = f(x, y) over the unit square or a region. */
 export const integrands = ["paraboloid", "product", "waves", "plane", "one"] as const;
 export type Integrand = (typeof integrands)[number];
@@ -240,7 +242,7 @@ export function sliceBounds(region: RegionId, sweep: Sweep, t: number): readonly
 }
 
 /** Composite Simpson's rule with an even number of panels. */
-function simpson(g: (t: number) => number, from: number, to: number, panels = 64): number {
+function simpson(g: (t: number) => number, from: number, to: number, panels = SIMPSON_PANELS): number {
   if (to <= from) {
     return 0;
   }

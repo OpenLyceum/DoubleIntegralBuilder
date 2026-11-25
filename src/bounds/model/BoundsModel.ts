@@ -9,9 +9,7 @@ import {
   regions,
   type Sweep,
 } from "../../common/model/IntegralMath.js";
-
-/** Seconds a full sweep of the slice across the region takes. */
-const SWEEP_SECONDS = 4;
+import { SWEEP_SECONDS } from "../../DoubleIntegralBuilderConstants.js";
 
 /**
  * A region, an integrand, and a slice that sweeps across the region. The slice position is a

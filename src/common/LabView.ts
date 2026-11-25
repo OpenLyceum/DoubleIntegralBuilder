@@ -17,7 +17,15 @@ import { ResetAllButton } from "scenerystack/scenery-phet";
 import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
 import { ComboBox, HSlider, RectangularPushButton } from "scenerystack/sun";
 import Colors from "../DoubleIntegralBuilderColors.js";
-import { SCREEN_VIEW_MARGIN } from "../DoubleIntegralBuilderConstants.js";
+import {
+  PANEL_GAP,
+  PANEL_MIN_WIDTH,
+  PLOT_HEIGHT,
+  PLOT_MARGIN,
+  PLOT_WIDTH,
+  SCREEN_VIEW_MARGIN,
+  TITLE_TO_PLOT_GAP,
+} from "../DoubleIntegralBuilderConstants.js";
 import {
   DOUBLE_INTEGRAL_BUILDER_COMBO_BOX_OPTIONS as COMBO_BOX_OPTIONS,
   FLAT_PANEL_PUSH_BUTTON_OPTIONS,
@@ -29,10 +37,6 @@ import { DoubleIntegralBuilderPanel as LabPanel } from "./DoubleIntegralBuilderP
 type StringSource = string | TReadOnlyProperty<string>;
 type Dependencies = readonly TReadOnlyProperty<unknown>[];
 type Point = readonly [number, number];
-
-const PLOT_WIDTH = 590;
-const PLOT_HEIGHT = 420;
-const PLOT_MARGIN = 23;
 
 export function computed(dependencies: Dependencies, calculate: () => string) {
   return DerivedProperty.deriveAny([localeProperty, ...dependencies], calculate);
@@ -149,7 +153,7 @@ export class LabView extends ScreenView {
     const title = text(config.title, 28, bounds.width - 2 * SCREEN_VIEW_MARGIN, true);
     title.left = left;
     title.top = bounds.minY + SCREEN_VIEW_MARGIN;
-    config.plot.setTranslation(left, title.bottom + 14);
+    config.plot.setTranslation(left, title.bottom + TITLE_TO_PLOT_GAP);
     const column = new VBox({
       align: "left",
       spacing: 8,
@@ -165,9 +169,9 @@ export class LabView extends ScreenView {
         ),
       ],
     });
-    const panel = new LabPanel(column, { xMargin: 15, yMargin: 13, minWidth: 325 });
-    panel.left = config.plot.left + PLOT_WIDTH + 18;
-    panel.top = title.bottom + 14;
+    const panel = new LabPanel(column, { xMargin: 15, yMargin: 13, minWidth: PANEL_MIN_WIDTH });
+    panel.left = config.plot.left + PLOT_WIDTH + PANEL_GAP;
+    panel.top = title.bottom + TITLE_TO_PLOT_GAP;
     const reset = new ResetAllButton({
       ...FLAT_RESET_ALL_BUTTON_OPTIONS,
       listener: config.reset,
