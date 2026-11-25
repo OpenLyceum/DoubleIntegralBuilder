@@ -9,15 +9,17 @@ import {
   KeyboardDragListener,
   Node,
   Rectangle,
+  RichText,
   Text,
   VBox,
 } from "scenerystack/scenery";
 import { ResetAllButton } from "scenerystack/scenery-phet";
 import { ScreenSummaryContent, ScreenView, type ScreenViewOptions } from "scenerystack/sim";
-import { HSlider, RectangularPushButton } from "scenerystack/sun";
+import { ComboBox, HSlider, RectangularPushButton } from "scenerystack/sun";
 import Colors from "../DoubleIntegralBuilderColors.js";
 import { SCREEN_VIEW_MARGIN } from "../DoubleIntegralBuilderConstants.js";
 import {
+  DOUBLE_INTEGRAL_BUILDER_COMBO_BOX_OPTIONS as COMBO_BOX_OPTIONS,
   FLAT_PANEL_PUSH_BUTTON_OPTIONS,
   FLAT_RESET_ALL_BUTTON_OPTIONS,
   LIGHT_SURFACE_TEXT_FILL,
@@ -50,13 +52,26 @@ function text(value: StringSource, size: number, width: number, bold = false): T
   });
 }
 
-export function slider(label: TReadOnlyProperty<string>, value: NumberProperty, step: number, suffix = ""): VBox {
-  const caption = computed([label, value], () => `${label.value}  ${format(value.value)}${suffix}`);
+/**
+ * A labelled slider. `display` turns the value into the shown and spoken text, for a slider
+ * that runs over a fraction but should read as the quantity it stands for.
+ */
+export function slider(
+  label: TReadOnlyProperty<string>,
+  value: NumberProperty,
+  step: number,
+  suffix = "",
+  display: (current: number) => string = (current) => `${format(current)}${suffix}`,
+  dependencies: Dependencies = [],
+): VBox {
+  const caption = computed([label, value, ...dependencies], () => `${label.value}  ${display(value.value)}`);
   const control = new HSlider(value, value.range, {
     accessibleName: label,
     keyboardStep: step,
     constrainValue: (next) => value.range.constrainValue(toFixedNumber(roundSymmetric(next / step) * step, 8)),
-    pdomCreateAriaValueText: (current) => `${format(current ?? value.value)}${suffix}`,
+    pdomCreateAriaValueText: (current) => display(current ?? value.value),
+    // The spoken value also depends on whatever `display` reads, such as the region.
+    pdomDependencies: [...dependencies],
     trackSize: new Dimension2(243, 4),
     thumbSize: new Dimension2(16, 21),
     thumbFill: Colors.accentColorProperty,
@@ -64,12 +79,35 @@ export function slider(label: TReadOnlyProperty<string>, value: NumberProperty, 
   return new VBox({ children: [text(caption, 15, 288, true), control], spacing: 3, align: "left" });
 }
 
-export function choice(label: TReadOnlyProperty<string>, caption: TReadOnlyProperty<string>, listener: () => void) {
+/**
+ * A drop-down list for choosing one of several named items. Labels may carry RichText markup.
+ * The open list is drawn in `listParent`, which LabView keeps on top.
+ */
+export function comboBox<T>(
+  property: ConstructorParameters<typeof ComboBox<T>>[0],
+  choices: readonly { value: T; label: StringSource; name?: StringSource }[],
+  listParent: Node,
+  accessibleName: TReadOnlyProperty<string>,
+): ComboBox<T> {
+  return new ComboBox(
+    property,
+    choices.map((item) => ({
+      value: item.value,
+      createNode: () =>
+        new RichText(item.label, { font: "15px sans-serif", fill: LIGHT_SURFACE_TEXT_FILL, maxWidth: 255 }),
+      accessibleName: item.name ?? item.label,
+    })),
+    listParent,
+    { ...COMBO_BOX_OPTIONS, accessibleName, xMargin: 10, yMargin: 5, cornerRadius: 4 },
+  );
+}
+
+/** A push button with a text label. */
+export function button(label: TReadOnlyProperty<string>, listener: () => void): RectangularPushButton {
   return new RectangularPushButton({
     ...FLAT_PANEL_PUSH_BUTTON_OPTIONS,
     accessibleName: label,
-    accessibleHelpText: caption,
-    content: new Text(caption, { font: "bold 15px sans-serif", maxWidth: 270, fill: LIGHT_SURFACE_TEXT_FILL }),
+    content: new Text(label, { font: "bold 15px sans-serif", maxWidth: 270, fill: LIGHT_SURFACE_TEXT_FILL }),
     xMargin: 10,
     yMargin: 7,
     listener,
@@ -90,6 +128,8 @@ type LabViewConfig = {
   controls: Node[];
   readouts: StringSource[];
   reset: () => void;
+  /** Parent for open combo-box lists, created by the view and added here on top of everything. */
+  listParent?: Node;
 };
 
 export class LabView extends ScreenView {
@@ -113,7 +153,17 @@ export class LabView extends ScreenView {
     const column = new VBox({
       align: "left",
       spacing: 8,
-      children: [...config.controls, ...config.readouts.map((value, index) => text(value, 15, 300, index === 0))],
+      children: [
+        ...config.controls,
+        ...config.readouts.map(
+          (value, index) =>
+            new RichText(value, {
+              font: `${index === 0 ? "bold " : ""}15px sans-serif`,
+              maxWidth: 300,
+              fill: Colors.textColorProperty,
+            }),
+        ),
+      ],
     });
     const panel = new LabPanel(column, { xMargin: 15, yMargin: 13, minWidth: 325 });
     panel.left = config.plot.left + PLOT_WIDTH + 18;
@@ -124,7 +174,10 @@ export class LabView extends ScreenView {
       right: bounds.maxX - SCREEN_VIEW_MARGIN,
       bottom: bounds.maxY - SCREEN_VIEW_MARGIN,
     });
-    const content = new Node({ children: [title, config.plot, panel, reset], pdomOrder: [config.plot, panel, reset] });
+    const content = new Node({
+      children: [title, config.plot, panel, reset, ...(config.listParent ? [config.listParent] : [])],
+      pdomOrder: [config.plot, panel, reset],
+    });
     this.addChild(content);
   }
 }

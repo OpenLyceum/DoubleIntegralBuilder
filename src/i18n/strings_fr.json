@@ -7,12 +7,11 @@
   "a11y": {
     "volume": {
       "screenSummary": {
-        "playArea": "Un graphique en projection montre des colonnes sous une surface quadratique.",
-        "controlArea": "Utilisez les curseurs et les boutons pour modifier l’exemple. Réinitialiser rétablit l’état initial.",
-        "interactionHint": "Changez le point d’échantillonnage, puis augmentez le nombre de colonnes."
+        "playArea": "Des colonnes sous la surface z = f(x, y) au-dessus du carré unité, la surface en fil de fer, un plan des points d’échantillonnage et un graphe log–log de l’erreur.",
+        "controlArea": "Choisissez la fonction et le point d’échantillonnage, réglez le nombre de colonnes selon x et y, et tournez la vue.",
+        "interactionHint": "Comparez un coin et le milieu. À quelle vitesse chaque erreur diminue-t-elle quand n augmente ?"
       },
       "controls": {
-        "count": "Colonnes par côté",
         "sampling": "Point d’échantillonnage",
         "midpoint": "Centre",
         "upperRight": "Coin supérieur droit",
@@ -20,22 +19,36 @@
         "rotateSolidHelp": "Utilisez les flèches gauche et droite, ou A et D, pour faire pivoter le solide.",
         "rotateFine": "Pivoter par petits pas",
         "rotateFineHelp": "Maintenez Maj enfoncée pour faire pivoter le solide par petits pas.",
-        "rotation": "Angle de vue"
+        "rotation": "Angle de vue",
+        "integrand": "Fonction à intégrer",
+        "columns": "Colonnes selon x",
+        "rows": "Colonnes selon y",
+        "lowerLeft": "Coin inférieur gauche",
+        "lowerRight": "Coin inférieur droit",
+        "upperLeft": "Coin supérieur gauche",
+        "errorPlot": "|erreur| pour n × n colonnes"
       }
     },
     "bounds": {
       "screenSummary": {
-        "playArea": "Le graphique montre un domaine courbe et la coupe active.",
-        "controlArea": "Utilisez les curseurs et les boutons pour modifier l’exemple. Réinitialiser rétablit l’état initial.",
-        "interactionHint": "Passez aux coupes verticales et dépassez x égal à un."
+        "playArea": "Une région dont la partie déjà balayée est ombrée, et la tranche courante entre ses deux courbes frontières.",
+        "controlArea": "Choisissez la région, la fonction et la direction des tranches, puis déplacez ou balayez la tranche.",
+        "interactionHint": "Écrivez l’intégrale itérée dans les deux ordres. Lequel demande deux morceaux ?"
       },
       "controls": {
         "sliceGrip": "Poignée de la coupe",
         "sweep": "Direction de la coupe",
         "horizontal": "Horizontale",
         "vertical": "Verticale",
-        "x": "Abscisse de la coupe",
-        "y": "Ordonnée de la coupe"
+        "region": "Région",
+        "integrand": "Fonction à intégrer",
+        "slice": "Tranche",
+        "sweepButton": "Balayer",
+        "total": "Intégrale complète",
+        "parabolaLine": "Entre x = y² et x = 2 − y",
+        "triangle": "Triangle 0 ≤ y ≤ x ≤ 1",
+        "lens": "Entre y = x² et y = √x",
+        "quarterDisk": "Quart de disque x² + y² ≤ 1"
       }
     }
   },

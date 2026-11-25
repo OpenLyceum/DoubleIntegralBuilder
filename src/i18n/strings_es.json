@@ -7,12 +7,11 @@
   "a11y": {
     "volume": {
       "screenSummary": {
-        "playArea": "Un gráfico en proyección muestra columnas bajo una superficie cuadrática.",
-        "controlArea": "Usa los controles deslizantes y los botones para cambiar el ejemplo. Reiniciar restaura el estado inicial.",
-        "interactionHint": "Cambia el punto de muestreo y aumenta el número de columnas."
+        "playArea": "Columnas bajo la superficie z = f(x, y) sobre el cuadrado unidad, la superficie en alambre, un plano de los puntos de muestreo y una gráfica log–log del error.",
+        "controlArea": "Elige el integrando y el punto de muestreo, fija el número de columnas según x y y, y gira la vista.",
+        "interactionHint": "Compara una esquina con el punto medio. ¿Qué tan rápido disminuye cada error al crecer n?"
       },
       "controls": {
-        "count": "Columnas por lado",
         "sampling": "Punto de muestreo",
         "midpoint": "Punto medio",
         "upperRight": "Esquina superior derecha",
@@ -20,22 +19,36 @@
         "rotateSolidHelp": "Usa las flechas izquierda y derecha, o A y D, para girar el sólido.",
         "rotateFine": "Girar en pasos más pequeños",
         "rotateFineHelp": "Mantén pulsada Mayús para girar el sólido en pasos más pequeños.",
-        "rotation": "Ángulo de visión"
+        "rotation": "Ángulo de visión",
+        "integrand": "Integrando",
+        "columns": "Columnas según x",
+        "rows": "Columnas según y",
+        "lowerLeft": "Esquina inferior izquierda",
+        "lowerRight": "Esquina inferior derecha",
+        "upperLeft": "Esquina superior izquierda",
+        "errorPlot": "|error| para n × n columnas"
       }
     },
     "bounds": {
       "screenSummary": {
-        "playArea": "El gráfico muestra una región curva y el corte activo.",
-        "controlArea": "Usa los controles deslizantes y los botones para cambiar el ejemplo. Reiniciar restaura el estado inicial.",
-        "interactionHint": "Cambia a cortes verticales y pasa por x igual a uno."
+        "playArea": "Una región con la parte ya barrida sombreada y el corte actual entre sus dos curvas frontera.",
+        "controlArea": "Elige la región, el integrando y la dirección de los cortes, luego mueve o barre el corte.",
+        "interactionHint": "Escribe la integral iterada en ambos órdenes. ¿Cuál necesita dos partes?"
       },
       "controls": {
         "sliceGrip": "Asa del corte",
         "sweep": "Dirección del corte",
         "horizontal": "Horizontal",
         "vertical": "Vertical",
-        "x": "Coordenada x del corte",
-        "y": "Coordenada y del corte"
+        "region": "Región",
+        "integrand": "Integrando",
+        "slice": "Corte",
+        "sweepButton": "Barrer",
+        "total": "Integral completa",
+        "parabolaLine": "Entre x = y² y x = 2 − y",
+        "triangle": "Triángulo 0 ≤ y ≤ x ≤ 1",
+        "lens": "Entre y = x² y y = √x",
+        "quarterDisk": "Cuarto de disco x² + y² ≤ 1"
       }
     }
   },

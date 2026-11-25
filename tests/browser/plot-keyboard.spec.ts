@@ -1,23 +1,27 @@
 import { expect, test } from "@playwright/test";
 
-test("the slice grip follows the selected sweep direction", async ({ page }) => {
+test("the slice grip moves along either arrow axis and stays inside the region", async ({ page }) => {
   await page.goto("/?ea&screens=2");
   const grip = page.getByRole("application", { name: "Slice grip", exact: true });
-  const y = page.getByRole("slider", { name: "Slice y", exact: true });
+  const slice = page.getByRole("slider", { name: "Slice", exact: true });
 
   await grip.focus();
   await page.keyboard.press("Shift+Tab");
   await page.keyboard.press("Tab");
   await expect(grip).toBeFocused();
-  await page.keyboard.press("ArrowRight");
-  await expect(y).toHaveAttribute("aria-valuenow", "0.45");
   await page.keyboard.press("ArrowUp");
-  await expect(y).toHaveAttribute("aria-valuenow", "0.5");
+  await expect(slice).toHaveAttribute("aria-valuenow", "0.5");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(slice).toHaveAttribute("aria-valuenow", "0.51");
+  await expect(slice).toHaveAttribute("aria-valuetext", "y = 0.51");
 
-  await page.getByRole("button", { name: "Slice direction", exact: true }).press("Enter");
-  await grip.press("Shift+ArrowRight");
-  await expect(page.getByRole("slider", { name: "Slice x", exact: true })).toHaveAttribute("aria-valuenow", "0.76");
-  await expect(grip).toBeFocused();
+  // Vertical slices across the same region run over 0 ≤ x ≤ 2, and the inner bounds switch at x = 1.
+  const direction = page.getByRole("button", { name: /^Slice direction/ });
+  await direction.press("Enter");
+  await page.getByRole("option", { name: "Vertical" }).press("Enter");
+  await expect(slice).toHaveAttribute("aria-valuetext", "x = 1.02");
+  await expect(page.getByText(/x = 1\.02:\s+0 ≤ y ≤ 0\.98/).first()).toBeAttached();
+  await expect(grip).not.toBeFocused();
 });
 
 test("the solid rotates directly with coarse and fine keyboard steps", async ({ page }) => {

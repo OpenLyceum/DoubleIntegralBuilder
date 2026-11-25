@@ -1,14 +1,22 @@
 import { NumberProperty, StringUnionProperty } from "scenerystack/axon";
 import { Range } from "scenerystack/dot";
 import type { TModel } from "scenerystack/joist";
+import { type Integrand, integrands, type Sampling, samplings } from "../../common/model/IntegralMath.js";
 
+/** Columns under z = f(x, y) over the unit square: m × n of them, each sampled at one point. */
 export class VolumeModel implements TModel {
-  public readonly countProperty = new NumberProperty(4, { range: new Range(2, 12) });
-  public readonly samplingProperty = new StringUnionProperty<"midpoint" | "upperRight">("midpoint", {
-    validValues: ["midpoint", "upperRight"],
-  });
+  public readonly integrandProperty = new StringUnionProperty<Integrand>("paraboloid", { validValues: integrands });
+  public readonly columnsProperty = new NumberProperty(4, { range: new Range(1, 12) });
+  public readonly rowsProperty = new NumberProperty(4, { range: new Range(1, 12) });
+  public readonly samplingProperty = new StringUnionProperty<Sampling>("midpoint", { validValues: samplings });
   public readonly rotationProperty = new NumberProperty(-35, { range: new Range(-75, 10) });
-  public readonly properties = [this.countProperty, this.samplingProperty, this.rotationProperty] as const;
+  public readonly properties = [
+    this.integrandProperty,
+    this.columnsProperty,
+    this.rowsProperty,
+    this.samplingProperty,
+    this.rotationProperty,
+  ] as const;
 
   public reset(): void {
     for (const property of this.properties) {

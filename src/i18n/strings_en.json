@@ -7,12 +7,11 @@
   "a11y": {
     "volume": {
       "screenSummary": {
-        "playArea": "A projected plot shows columns under a quadratic roof.",
-        "controlArea": "Use the sliders and buttons to change the example. Reset All restores the starting state.",
-        "interactionHint": "Change the sample location, then increase the number of columns."
+        "playArea": "Columns under the surface z = f(x, y) over the unit square, the surface as a wireframe, a floor plan of the sample points, and a log–log graph of the error.",
+        "controlArea": "Choose the integrand and the sample point, set the number of columns along x and y, and turn the view.",
+        "interactionHint": "Compare a corner sample with the midpoint. How fast does each error shrink as n grows?"
       },
       "controls": {
-        "count": "Columns per side",
         "sampling": "Sample location",
         "midpoint": "Midpoint",
         "upperRight": "Upper-right corner",
@@ -20,22 +19,36 @@
         "rotateSolidHelp": "Use the left and right arrow keys, or A and D, to rotate the solid.",
         "rotateFine": "Rotate in smaller steps",
         "rotateFineHelp": "Hold Shift while rotating the solid to take smaller steps.",
-        "rotation": "View angle"
+        "rotation": "View angle",
+        "integrand": "Integrand",
+        "columns": "Columns along x",
+        "rows": "Columns along y",
+        "lowerLeft": "Lower-left corner",
+        "lowerRight": "Lower-right corner",
+        "upperLeft": "Upper-left corner",
+        "errorPlot": "|error| for n × n columns"
       }
     },
     "bounds": {
       "screenSummary": {
-        "playArea": "The graph shows a curved region and its active slice.",
-        "controlArea": "Use the sliders and buttons to change the example. Reset All restores the starting state.",
-        "interactionHint": "Switch to vertical slices and sweep past x equals one."
+        "playArea": "A region with the part already swept shaded, and the current slice between its two boundary curves.",
+        "controlArea": "Choose the region, the integrand and the slice direction, then move or sweep the slice.",
+        "interactionHint": "Write the iterated integral both ways. Which order needs two pieces?"
       },
       "controls": {
         "sliceGrip": "Slice grip",
         "sweep": "Slice direction",
         "horizontal": "Horizontal",
         "vertical": "Vertical",
-        "x": "Slice x",
-        "y": "Slice y"
+        "region": "Region",
+        "integrand": "Integrand",
+        "slice": "Slice",
+        "sweepButton": "Sweep",
+        "total": "Whole integral",
+        "parabolaLine": "Between x = y² and x = 2 − y",
+        "triangle": "Triangle 0 ≤ y ≤ x ≤ 1",
+        "lens": "Between y = x² and y = √x",
+        "quarterDisk": "Quarter disk x² + y² ≤ 1"
       }
     }
   },

@@ -1,9 +1,10 @@
 import { roundSymmetric, Vector2 } from "scenerystack/dot";
+import { Node } from "scenerystack/scenery";
 import type { ScreenViewOptions } from "scenerystack/sim";
 import {
   addPlotDrag,
   addPlotKeyboardDrag,
-  choice,
+  comboBox,
   computed,
   dot,
   format,
@@ -13,7 +14,17 @@ import {
   plotLabel,
   slider,
 } from "../../common/LabView.js";
-import { EXACT_VOLUME, roof, volumeCells, volumeEstimate } from "../../common/model/IntegralMath.js";
+import {
+  evaluate,
+  exactVolume,
+  type Integrand,
+  integrandLabel,
+  integrands,
+  type Sampling,
+  samplings,
+  volumeCells,
+  volumeEstimate,
+} from "../../common/model/IntegralMath.js";
 import { orthographic } from "../../common/Projection.js";
 import { StringManager } from "../../i18n/StringManager.js";
 import type { VolumeModel } from "../model/VolumeModel.js";
@@ -59,22 +70,124 @@ function drawTurntable(
   context.globalAlpha = 1;
 }
 
+const superscripts: Record<string, string> = { "2": "²", "3": "³" };
+/** Plain text for the canvas: <sup>2</sup> becomes ², other tags are dropped. */
+function canvasText(markup: string): string {
+  return markup
+    .replace(/<sup>([^<]*)<\/sup>/g, (_, power: string) => superscripts[power] ?? `^${power}`)
+    .replace(/<[^>]+>/g, "");
+}
+
+/** A floor plan in the lower left that shows the sample point of every cell without occlusion. */
+function drawFloorPlan(
+  context: CanvasRenderingContext2D,
+  colors: { ink: string; accent: string },
+  cells: ReturnType<typeof volumeCells>,
+  columns: number,
+  rows: number,
+  crowded: boolean,
+): void {
+  const insetLeft = 39;
+  const insetBottom = 314;
+  const insetSize = 155;
+  const fromAbove = (x: number, y: number): readonly [number, number] => [
+    insetLeft + x * insetSize,
+    insetBottom - y * insetSize,
+  ];
+  for (let i = 0; i <= rows; i++) {
+    line(context, [fromAbove(0, i / rows), fromAbove(1, i / rows)], colors.ink);
+  }
+  for (let i = 0; i <= columns; i++) {
+    line(context, [fromAbove(i / columns, 0), fromAbove(i / columns, 1)], colors.ink);
+  }
+  for (const sample of cells) {
+    dot(context, fromAbove(sample.sampleX, sample.sampleY), colors.accent, crowded ? 2 : 3);
+  }
+  plotLabel(context, "x", fromAbove(1.06, 0), colors.ink);
+  plotLabel(context, "y", fromAbove(0, 1.06), colors.ink);
+}
+
+/** The largest value of f on the unit square, sampled on a grid, for scaling heights. */
+function roofHeight(integrand: Integrand): number {
+  let top = 0;
+  for (let i = 0; i <= 20; i++) {
+    for (let j = 0; j <= 20; j++) {
+      top = Math.max(top, Math.abs(evaluate(integrand, i / 20, j / 20)));
+    }
+  }
+  return Math.max(top, 1e-6);
+}
+
+/**
+ * |error| against n for n × n columns with the current sample point, on log–log axes in the
+ * top-right corner: the midpoint rule falls twice as steeply as a corner rule.
+ */
+function drawErrorInset(
+  context: CanvasRenderingContext2D,
+  colors: { ink: string; accent: string; grid: string },
+  integrand: Integrand,
+  sampling: Sampling,
+  columns: number,
+  rows: number,
+  title: string,
+): void {
+  const box = { left: 62, right: 205, top: 48, bottom: 128 };
+  const counts = Array.from({ length: 12 }, (_, i) => i + 1);
+  const errors = counts.map((n) =>
+    Math.log10(
+      Math.max(1e-12, Math.abs(volumeEstimate(volumeCells(n, n, sampling, integrand)) - exactVolume(integrand))),
+    ),
+  );
+  const low = Math.floor(Math.min(...errors, -1));
+  const high = Math.ceil(Math.max(...errors, 0));
+  const px = (n: number) => box.left + ((box.right - box.left) * Math.log(n)) / Math.log(12);
+  const py = (value: number) => box.bottom - ((box.bottom - box.top) * (value - low)) / Math.max(1, high - low);
+  line(
+    context,
+    [
+      [box.left, box.top],
+      [box.left, box.bottom],
+      [box.right, box.bottom],
+    ],
+    colors.ink,
+    1,
+  );
+  line(
+    context,
+    counts.map((n, i) => [px(n), py(errors[i] ?? 0)] as const),
+    colors.accent,
+    2,
+  );
+  if (columns === rows) {
+    dot(context, [px(columns), py(errors[columns - 1] ?? 0)], colors.accent, 5);
+  }
+  plotLabel(context, title, [box.left - 4, box.top - 10], colors.ink);
+  plotLabel(context, `1e${high}`, [box.left - 40, box.top + 4], colors.ink);
+  plotLabel(context, `1e${low}`, [box.left - 40, box.bottom], colors.ink);
+  plotLabel(context, "n = 1", [box.left - 6, box.bottom + 15], colors.ink);
+  plotLabel(context, "12", [box.right - 12, box.bottom + 15], colors.ink);
+}
+
 export class VolumeScreenView extends LabView {
   public constructor(model: VolumeModel, options?: ScreenViewOptions) {
     const manager = StringManager.getInstance();
     const { controls: s, screenSummary } = manager.getVolumeA11yStrings();
-    const { countProperty, samplingProperty, rotationProperty, properties } = model;
-    const cells = () => volumeCells(countProperty.value, samplingProperty.value);
-    const samplingName = computed(
-      [samplingProperty, s.midpointStringProperty, s.upperRightStringProperty],
-      () => (samplingProperty.value === "midpoint" ? s.midpointStringProperty : s.upperRightStringProperty).value,
+    const { integrandProperty, columnsProperty, rowsProperty, samplingProperty, rotationProperty, properties } = model;
+    const cells = () =>
+      volumeCells(columnsProperty.value, rowsProperty.value, samplingProperty.value, integrandProperty.value);
+    const exact = () => exactVolume(integrandProperty.value);
+    const samplingName = computed([samplingProperty], () => s[`${samplingProperty.value}StringProperty`].value);
+    const estimate = computed(
+      properties,
+      () => `Σ f(x<sub>i</sub>*, y<sub>j</sub>*) ΔA ≈ ${format(volumeEstimate(cells()), 5)}`,
     );
-    const estimate = computed(properties, () => `Σ f(xᵢ, yⱼ) ΔA ≈ ${format(volumeEstimate(cells()), 5)}`);
-    const error = computed(properties, () => `ΔV = ${format(volumeEstimate(cells()) - EXACT_VOLUME, 5)}`);
+    const exactLine = computed(properties, () => `V = ${format(exact(), 5)}`);
+    const error = computed(properties, () => `ΔV = Σ − V = ${format(volumeEstimate(cells()) - exact(), 5)}`);
+    const plain = (markup: string) => markup.replace(/<sup>([^<]*)<\/sup>/g, "^$1").replace(/<[^>]+>/g, "");
     const details = computed(
-      [estimate, error, countProperty, samplingName],
+      [estimate, error, columnsProperty, rowsProperty, samplingName, integrandProperty],
       () =>
-        `${format(countProperty.value)} × ${format(countProperty.value)}. ${samplingName.value}. ${estimate.value}. V = 5/3. ${error.value}.`,
+        `f(x, y) = ${plain(integrandLabel(integrandProperty.value))}. ${format(columnsProperty.value)} × ${format(rowsProperty.value)}. ${samplingName.value}. ${plain(estimate.value)}. V = ${format(exact(), 5)}. ${plain(error.value)}.`,
     );
     const plot = new PlotCanvas(properties, (context, colors) => {
       const project = orthographic(rotationProperty.value, 27, 122, [369, 355]);
@@ -84,15 +197,18 @@ export class VolumeScreenView extends LabView {
         [1, 1, 0],
         [0, 1, 0],
       ];
-      const xy = ([x, y, z]: Point3) => project([x, y, z * 0.75]).point;
+      // Scale heights so the tallest point of the roof stands about 1.5 units high.
+      const integrand = integrandProperty.value;
+      const zScale = 1.5 / roofHeight(integrand);
+      const xy = ([x, y, z]: Point3) => project([x, y, z * zScale]).point;
       drawTurntable(context, rotationProperty.value, xy, colors.ink);
       line(context, [...floor, floor[0] as Point3].map(xy), colors.ink, 2);
-      const boxSize = 1 / countProperty.value;
-      const faces = cells().flatMap(({ x, y, height, sampleX, sampleY }) => {
+      const crowded = columnsProperty.value * rowsProperty.value > 64;
+      const faces = cells().flatMap(({ x, y, width, depth, height, sampleX, sampleY }) => {
         const a: Point3 = [x, y, 0];
-        const b: Point3 = [x + boxSize, y, 0];
-        const c: Point3 = [x + boxSize, y + boxSize, 0];
-        const d: Point3 = [x, y + boxSize, 0];
+        const b: Point3 = [x + width, y, 0];
+        const c: Point3 = [x + width, y + depth, 0];
+        const d: Point3 = [x, y + depth, 0];
         const raised = ([u, v]: Point3): Point3 => [u, v, height];
         return [
           {
@@ -107,7 +223,7 @@ export class VolumeScreenView extends LabView {
         ].map((face) => ({
           ...face,
           depth:
-            face.corners.reduce((total, p) => total + project([p[0], p[1], p[2] * 0.75]).depth, 0) /
+            face.corners.reduce((total, p) => total + project([p[0], p[1], p[2] * zScale]).depth, 0) /
             face.corners.length,
         }));
       });
@@ -117,7 +233,7 @@ export class VolumeScreenView extends LabView {
         line(context, face.corners.map(xy), colors.background, 1, face.fill);
         context.globalAlpha = 1;
         if (face.sample) {
-          dot(context, xy(face.sample), colors.background, countProperty.value > 8 ? 1.3 : 2.3);
+          dot(context, xy(face.sample), colors.background, crowded ? 1.3 : 2.3);
         }
       }
 
@@ -128,32 +244,23 @@ export class VolumeScreenView extends LabView {
           const curve = Array.from({ length: 25 }, (_, j) => {
             const x = swap ? j / 24 : i / 4;
             const y = swap ? i / 4 : j / 24;
-            return xy([x, y, roof(x, y)]);
+            return xy([x, y, evaluate(integrand, x, y)]);
           });
           line(context, curve, colors.alternate, 1.35);
         }
       }
       context.globalAlpha = 1;
-      // A floor plan shows the selected sample in each cell without occlusion.
-      const insetLeft = 39;
-      const insetBottom = 314;
-      const insetSize = 155;
-      const fromAbove = (x: number, y: number): readonly [number, number] => [
-        insetLeft + x * insetSize,
-        insetBottom - y * insetSize,
-      ];
-      for (let i = 0; i <= countProperty.value; i++) {
-        const coordinate = i / countProperty.value;
-        line(context, [fromAbove(0, coordinate), fromAbove(1, coordinate)], colors.ink);
-        line(context, [fromAbove(coordinate, 0), fromAbove(coordinate, 1)], colors.ink);
-      }
-      const sampleColor = colors.accent;
-      for (const sample of cells()) {
-        dot(context, fromAbove(sample.sampleX, sample.sampleY), sampleColor, countProperty.value > 8 ? 2 : 3);
-      }
-      plotLabel(context, "x", fromAbove(1.06, 0), colors.ink);
-      plotLabel(context, "y", fromAbove(0, 1.06), colors.ink);
-      plotLabel(context, "z = 1 + x² + y²", [16, 25], colors.alternate);
+      drawFloorPlan(context, colors, cells(), columnsProperty.value, rowsProperty.value, crowded);
+      plotLabel(context, `z = ${canvasText(integrandLabel(integrand))}`, [16, 405], colors.alternate);
+      drawErrorInset(
+        context,
+        colors,
+        integrand,
+        samplingProperty.value,
+        columnsProperty.value,
+        rowsProperty.value,
+        s.errorPlotStringProperty.value,
+      );
       plotLabel(context, "x", xy([1.2, 0, 0]), colors.ink);
       plotLabel(context, "y", xy([0, 1.14, 0]), colors.ink);
     });
@@ -200,20 +307,36 @@ export class VolumeScreenView extends LabView {
         },
       },
     });
+    const listParent = new Node();
     super(
       {
         title: manager.getScreenNames().volumeStringProperty,
         summary: screenSummary,
         details,
         plot,
+        listParent,
         controls: [
-          slider(s.countStringProperty, countProperty, 1),
-          choice(s.samplingStringProperty, samplingName, () => {
-            samplingProperty.value = samplingProperty.value === "midpoint" ? "upperRight" : "midpoint";
-          }),
+          comboBox(
+            integrandProperty,
+            integrands.map((integrand: Integrand) => ({
+              value: integrand,
+              label: `f(x, y) = ${integrandLabel(integrand)}`,
+              name: `f(x, y) = ${plain(integrandLabel(integrand))}`,
+            })),
+            listParent,
+            s.integrandStringProperty,
+          ),
+          slider(s.columnsStringProperty, columnsProperty, 1),
+          slider(s.rowsStringProperty, rowsProperty, 1),
+          comboBox(
+            samplingProperty,
+            samplings.map((sampling: Sampling) => ({ value: sampling, label: s[`${sampling}StringProperty`] })),
+            listParent,
+            s.samplingStringProperty,
+          ),
           slider(s.rotationStringProperty, rotationProperty, 5, "°"),
         ],
-        readouts: [estimate, "V = 5/3 ≈ 1.66667", error, "ΔV = Σ f(xᵢ, yⱼ) ΔA − V"],
+        readouts: [estimate, exactLine, error],
         reset: () => model.reset(),
       },
       options,
